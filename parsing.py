@@ -1,13 +1,19 @@
-from typing import TextIO, List
+from typing import TextIO, List, Any
 from data import MetaDataZone, ZoneData, Prefix, \
                 MetaKey, ZoneTypes, ParseManager, ConnectionData
 
 
 class ZoneParse:
 
+    """
+    class for parsing the zone data.
+    """
     @staticmethod
     def is_start_end(line_nb: int) -> None:
 
+        """
+        Method that check if there is a start and end zone.
+        """
         if Prefix.START.value not in ZoneData.prefixes:
             ParseManager.error('line must define a start_hub zone before '
                                'defining a connection.', line_nb)
@@ -17,18 +23,27 @@ class ZoneParse:
                                'defining a connection.', line_nb)
 
     @staticmethod
-    def parse_coordinate(x_str: str, y_str: str, line_nb) -> tuple[int, int]:
+    def parse_coordinate(x_str: str, y_str: str, line_nb: int
+                         ) -> tuple[int, int]:
+
+        """
+        Method that convert the cord of a zone to valid int.
+        """
 
         try:
-            return (int(x_str), int(y_str))
+            a = int(x_str), int(y_str)
 
         except ValueError:
             ParseManager.error(
                 'Invalid zone coordinate try a integer number.', line_nb)
+        return a
 
     @staticmethod
-    def parse_zone(meta: dict, line_nb: int, data: List[str]) -> str:
+    def parse_zone(meta: dict[str, Any], line_nb: int, data: List[str]) -> str:
 
+        """
+        Method that parse the zone data if its already declarad.
+        """
         if MetaKey.ZONE.value in meta:
             ParseManager.error('Redeclaration of zone.', line_nb)
 
@@ -42,17 +57,27 @@ class ZoneParse:
             f'Invalid zone_type ({zone_type}). Expected: "{zone_types}"',
             line_nb)
 
-    @staticmethod
-    def parse_color(meta: dict, line_nb: int, data: List[str]) -> str:
+# JUST FOR MYPY
+        return zone_type
 
+    @staticmethod
+    def parse_color(meta: dict[str, Any], line_nb: int,
+                    data: List[str]) -> str:
+        """
+        Method that check if the color is already delcared
+        """
         if MetaKey.COLOR.value in meta:
             ParseManager.error('Redeclaration of color.', line_nb)
 
         return data[1].strip()
 
     @staticmethod
-    def parse_max_drones(meta: dict, line_nb: int, data: List[str]) -> int:
+    def parse_max_drones(meta: dict[str, Any], line_nb: int,
+                         data: List[str]) -> int:
 
+        """
+        Method that check if the max_drone already declard
+        """
         if MetaKey.MX_DRONES.value in meta:
             ParseManager.error('Redeclaration of max_drones.', line_nb)
 
@@ -64,29 +89,32 @@ class ZoneParse:
                 ParseManager.error('max_drones must be integer greater than'
                                    ' 0.', line_nb)
 
-            return max_drones
-
         except ValueError:
             ParseManager.error(
                 'max_drones must be valid number.', line_nb)
 
+        return max_drones
+
     @staticmethod
-    def parse_metadata_tokens(data: str, line_nb: int) -> dict:
+    def parse_metadata_tokens(data: str, line_nb: int) -> dict[str, Any]:
 
-        data = data.split('[', 1)[1].split(']', 1)
+        """
+        Method that parse the metadata of zone.
+        """
+        data_m = data.split('[', 1)[1].split(']', 1)
 
-        if len(data) == 1:
+        if len(data_m) == 1:
             ParseManager.error('Please close bracket after defining the '
                                'metadata', line_nb)
 
-        if data[1].strip():
+        if data_m[1].strip():
             ParseManager.error('No data is allowed after metadata.', line_nb)
 
-        data = data[0].strip().split()
+        data_m2 = data_m[0].strip().split()
 
-        metadata = {}
+        metadata: dict[str, Any] = {}
 
-        for elm in data:
+        for elm in data_m2:
 
             meta = elm.split('=', 1)
             key = meta[0].strip()
@@ -116,41 +144,47 @@ class ZoneParse:
         return metadata
 
     @staticmethod
-    def parse_meta(metadata: List, line_nb: int) -> MetaDataZone:
+    def parse_meta(metadata: List[str], line_nb: int) -> MetaDataZone:
 
+        """
+        Method that parse the metadata of a zone.
+        """
         if '[' not in metadata[0]:
             ParseManager.error('Invalid syntax. Expected <zone_name> <x> <y> '
                                '<optional: [metadata]> (check if the brackets '
                                'are open to set metadata).', line_nb)
 
-        metadata = " ".join(metadata)
-        metadata = ZoneParse.parse_metadata_tokens(metadata, line_nb)
+        metadata_str = " ".join(metadata)
+        metadata_dict = ZoneParse.parse_metadata_tokens(metadata_str, line_nb)
 
-        return MetaDataZone(metadata)
+        return MetaDataZone(metadata_dict)
 
     @staticmethod
     def parse_zone_line(data: str, line_nb: int, prefix: str) -> ZoneData:
 
-        data = data.split()
+        """
+        Method that parse the whole line.
+        """
+        data_lst = data.split()
 
-        if len(data) < 3:
+        if len(data_lst) < 3:
             ParseManager.error('insuffisant data for zone. Expected: '
                                '<zone_name> <x> <y> <optional: [metadata]>',
                                line_nb)
 
-        zone_name = data[0].strip()
+        zone_name = data_lst[0].strip()
 
         if '-' in zone_name:
             ParseManager.error('Please remove the dash "-" from zone name',
                                line_nb)
 
-        if len(data) == 3:
+        if len(data_lst) == 3:
             meta = MetaDataZone({})
 
         else:
-            meta = ZoneParse.parse_meta(data[3:], line_nb)
+            meta = ZoneParse.parse_meta(data_lst[3:], line_nb)
 
-        x, y = ZoneParse.parse_coordinate(data[1], data[2], line_nb)
+        x, y = ZoneParse.parse_coordinate(data_lst[1], data_lst[2], line_nb)
 
         return ZoneData(prefix, zone_name, x, y, meta, line_nb)
 
@@ -158,6 +192,9 @@ class ZoneParse:
     def get_zones(file: TextIO, linenb: int
                   ) -> tuple[List[ZoneData], str, int]:
 
+        """
+        Method that creat zone objects.
+        """
         zones = list()
         valid_prefix = [prf.value for prf in Prefix
                         if prf.value not in {'connection', 'nb_drones'}]
@@ -194,8 +231,11 @@ class ZoneParse:
 class DroneNumber:
 
     @staticmethod
-    def get_nb_drones(line_drones: str, line_nb) -> int:
+    def get_nb_drones(line_drones: str, line_nb: int) -> int:
 
+        """
+        Method that return the number of drones.
+        """
         nb_data = line_drones.split('#', 1)[0].split(':', 1)
         key = nb_data[0].strip()
 
@@ -221,19 +261,22 @@ class DroneNumber:
                 ParseManager.error(
                     'Drones number must be a integer greater than 0.', line_nb)
 
-            return nb_drones
-
         except ValueError:
             ParseManager.error(
                 'Drones number must be a valid integer.', line_nb)
+
+        return nb_drones
 
 
 class ConnectionParse:
 
     @staticmethod
-    def is_define(zone1: str, zone2: str, zones: dict,
+    def is_define(zone1: str, zone2: str, zones: dict[str, Any],
                   line_nb: int) -> None:
 
+        """
+        Method check if the connection already define.
+        """
         if zone1 not in zones:
             ParseManager.error(f'zone "{zone1}" is undefined.', line_nb)
 
@@ -241,8 +284,11 @@ class ConnectionParse:
             ParseManager.error(f'zone "{zone2}" is undefined.', line_nb)
 
     @staticmethod
-    def convert_mx_cp(meta, line_nb: int):
+    def convert_mx_cp(meta: List[str], line_nb: int) -> int:
 
+        """
+        Method that calculate the max_link_capacity and returb it.
+        """
         if not meta[0].strip():
             return 1
 
@@ -282,6 +328,9 @@ class ConnectionParse:
     @staticmethod
     def calcl_max_cp(line: List[str], line_nb: int) -> int:
 
+        """
+        Method that calculate the max_link_capacity
+        """
         meta = [""]
 
         if len(line) > 1:
@@ -311,6 +360,9 @@ class ConnectionParse:
     @staticmethod
     def parse_cnx(conx_zon: str, line_nb: int) -> tuple[str, str]:
 
+        """
+        Method that parse the cnx_object.
+        """
         zones = conx_zon.split('-')
 
         if len(zones) == 1:
@@ -335,31 +387,37 @@ class ConnectionParse:
     @staticmethod
     def parse_line(line: str, line_nb: int) -> tuple[str, str, int]:
 
-        line = line.split('#', 1)[0].strip().split(':', 1)
+        """
+        Method that parse the line
+        """
+        line_new = line.split('#', 1)[0].strip().split(':', 1)
 
-        if len(line) < 2:
+        if len(line_new) < 2:
             ParseManager.error('Use ":" to define a connection', line_nb)
 
-        elif line[0].strip() != 'connection':
+        elif line_new[0].strip() != 'connection':
             ParseManager.error('Invalid key word to define a connection, use '
                                '"connection". Also no data is allowed after '
                                'finishing connections and you must define a'
                                'connection.', line_nb)
 
-        elif not line[1].strip():
+        elif not line_new[1].strip():
             ParseManager.error('Missing data after ":".', line_nb)
 
-        line = line[1].split()
+        line_str = line_new[1].split()
 
-        max_link_cp = ConnectionParse.calcl_max_cp(line, line_nb)
-        zone1, zone2 = ConnectionParse.parse_cnx(line[0], line_nb)
+        max_link_cp = ConnectionParse.calcl_max_cp(line_str, line_nb)
+        zone1, zone2 = ConnectionParse.parse_cnx(line_str[0], line_nb)
 
         return (zone1, zone2, max_link_cp)
 
     @staticmethod
-    def add_cnx(zones: dict, line_nb, zone1: str, zone2: str,
+    def add_cnx(zones: dict[str, Any], line_nb: int, zone1: str, zone2: str,
                 mx_cp: int) -> None:
 
+        """
+        Methode that add the conx
+        """
         full_zone1 = zones[zone1]
         full_zone2 = zones[zone2]
 
@@ -376,8 +434,11 @@ class ConnectionParse:
 
     @staticmethod
     def get_cnx(file: TextIO, curr_line: str, line_nb: int,
-                zones: dict[ZoneData]) -> None:
+                zones: dict[str, ZoneData,]) -> None:
 
+        """
+        Method that get the connection from the input file.
+        """
         for line_nb, line in enumerate([curr_line, *file], line_nb):
 
             line = line.strip()

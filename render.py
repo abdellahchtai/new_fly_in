@@ -1,17 +1,40 @@
 from simulation import Simulation
 from data import Data, ParseManager, Drones
-import pygame
+from typing import List
+import warnings
+warnings.filterwarnings("ignore")
+import pygame  # noqa: E402
 
 
 class Visualization:
 
+    """
+    Class responsable about visualisation of drone, connection and zones.
+    """
+
     @staticmethod
-    def draw(data: Data, window, new_center: tuple[int, int]):
+    def draw(data: Data, window: pygame.Surface,
+             new_center: List[int]) -> None:
+
+        """
+        Methode for drawing the zones and the connection in the window of
+        pygame using (x, y).
+        """
 
         info = pygame.display.Info()
         w = info.current_w
         h = info.current_h
-        font = pygame.font.Font(None, 20)
+
+        to_add = 0
+        for_cor = 0
+        ln = 12
+
+        if w > 2000 and h > 1100:
+            to_add = 5
+            for_cor = 5
+            ln = 8
+
+        font = pygame.font.Font(None, 20 + to_add)
         font2 = pygame.font.Font(None, 17)
 
         for zone in data.zones:
@@ -25,7 +48,8 @@ class Visualization:
                 x_cnx = zone_cnx.x * 100 + w // 2 + new_center[0]
                 y_cnx = zone_cnx.y * 140 + h // 2 + new_center[1]
 
-                pygame.draw.line(window, 'black', (x, y), (x_cnx, y_cnx), 3)
+                pygame.draw.line(window, 'black', (x, y), (x_cnx, y_cnx),
+                                 3 + (to_add // 4))
 
         for zone in data.zones:
 
@@ -33,35 +57,48 @@ class Visualization:
             y = zone.y * 140 + h // 2 + new_center[1]
 
             try:
+                if zone.meta.color is None:
+                    raise TypeError
+
                 color = pygame.Color(zone.meta.color)
 
             except (ValueError, TypeError):
                 color = pygame.Color('yellow')
+            pygame.draw.circle(window, color, (x, y), 30 + to_add)
 
-            pygame.draw.circle(window, color, (x, y), 30)
             pen = font
-            if len(zone.name) > 12:
+            if len(zone.name) > ln:
                 pen = font2
 
             window.blit(pen.render(zone.name, True, 'black'),
-                        (x - 30, y - 60))
+                        (x - 30, y - 60 - for_cor))
             window.blit(font.render(zone.meta.zone_type, True, 'black'),
-                        (x - 30, y + 32))
+                        (x - 30, y + 32 + for_cor))
             window.blit(
                 font.render(f"Max_dr: {zone.meta.max_drones}", True, 'black'),
-                (x - 30, y + 45))
+                (x - 30, y + 45 + for_cor))
             window.blit(font.render(
                 f"Curr_dr: {zone.meta.curr_drones}", True, 'black'),
-                        (x - 30, y - 45))
+                        (x - 30, y - 45 - for_cor))
 
     @staticmethod
-    def draw_drones(window, img_drn, new_center, drones, i):
+    def draw_drones(
+        window: pygame.Surface, img_drn: pygame.Surface, new_center: List[int],
+        drones: List[Drones], i: int
+    ) -> None:
+
+        """
+        Methode for drawing the drone image in each zone.
+        """
 
         info = pygame.display.Info()
         w = info.current_w
         h = info.current_h
-        font = pygame.font.Font(None, 100)
-        font2 = pygame.font.Font(None, 20)
+        to_add = 0
+        if w > 2300 and h > 1400:
+            to_add = 20
+        font = pygame.font.Font(None, 100 + to_add)
+        font2 = pygame.font.Font(None, 30 + to_add)
 
         for drone in drones:
 
@@ -81,16 +118,21 @@ class Visualization:
                         (0, 0))
             window.blit(font2.render(
                 f"{'-' * 15}Instruction: {'-' * 15}", True, 'black'),
-                        (10, 60))
+                        (10, 70))
             window.blit(font2.render(
                 "Press 'm' to move drones.", True, 'black'),
-                        (15, 80))
+                        (15, 80 + to_add))
             window.blit(font2.render(
                 "Press 'r' to restart from beginning.", True, 'black'),
-                        (15, 100))
+                        (15, 120 + to_add))
 
     @staticmethod
-    def display(data: Data, drones: Drones, name_map: str) -> None:
+    def display(data: Data, drones: List[Drones], name_map: str) -> None:
+
+        """
+        Methode that creat the envirment for pygame (window,
+        critical object...).
+        """
 
         pygame.init()
         info = pygame.display.Info()

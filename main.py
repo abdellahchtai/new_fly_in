@@ -1,15 +1,28 @@
 import sys
 from data import ParseManager, ParseError, Data, Drones
 from render import Visualization
+from typing import Any
 
 
 class Manager:
 
+    """
+    Class that start the progrma of drones.
+    """
+
     def __init__(self, input_file: str) -> None:
+
+        """
+        Method that creat a object that hold the input file
+        """
+
         self.input_file = input_file
 
-    def main(self, data_dict: dict) -> None:
+    def main(self, data_dict: dict[str, Any]) -> None:
 
+        """
+        Method that manager the zone and drones.
+        """
         data_obj = Data(data_dict)
 
         drones = [
@@ -47,5 +60,5 @@ if __name__ == '__main__':
     try:
         start.main(data_dict)
 
-    except ParseError as e:
+    except (ParseError, KeyboardInterrupt) as e:
         print(e)

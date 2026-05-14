@@ -1,18 +1,27 @@
 from data import Data, ZoneData
-from typing import Optional
+from typing import Optional, Any, List
 import heapq
 
 
 class Algo:
 
+    """
+    Class responsible for the algorithm used which is djisktra in this case
+    """
+
     @staticmethod
     def djikstra_algo(data: Data, start_zone: ZoneData,
                       end_zone: ZoneData) -> Optional[ZoneData]:
 
+        """
+        Methode that applique the djisktra algo to find the shortest path
+        in every turn.
+        """
+
         Algo.reset_goal_cost_zones(data)
         start_zone.goal_cost = (0, None)
 
-        heap = [(0, start_zone)]
+        heap: List[tuple[int, Any]] = [(0, start_zone)]
         heapq.heapify(heap)
 
         while heap:
@@ -47,6 +56,10 @@ class Algo:
     def get_path(data: Data, start_zone: ZoneData,
                  end_zone: ZoneData) -> Optional[ZoneData]:
 
+        """
+        Methode that help the djisktra methode to find the shortest path.
+        """
+
         if end_zone.goal_cost[1] is None:
             return None
 
@@ -55,7 +68,8 @@ class Algo:
 
         while curr.name != start_zone.name:
 
-            curr = data.zone_by_name[curr.goal_cost[1]]
+            if curr.goal_cost[1] is not None:
+                curr = data.zone_by_name[curr.goal_cost[1]]
             path.append(curr)
 
         if len(path) >= 2:
@@ -66,5 +80,8 @@ class Algo:
     @staticmethod
     def reset_goal_cost_zones(data: Data) -> None:
 
+        """
+        Methode to reset the attribute goal_cost for each zone.
+        """
         for zone in data.zones:
             zone.goal_cost = (float('inf'), None)
