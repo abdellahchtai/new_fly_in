@@ -10,10 +10,10 @@ class Simulation:
 
         name = drone.next_zone.name if drone.next_zone else None
         if drone.in_cnx:
-            name = "drone in cnx."
+            name = f"<{drone.curr_zone.name}-{name}>"
 
         if name:
-            print(f"{drone.id}-{name}")
+            print(f"{drone.id}-{name}.", end=' ')
 
     @staticmethod
     def find_pt_per_drone(data: Data, drones: Drones
@@ -26,7 +26,7 @@ class Simulation:
 
         while drones_cp:
 
-            print(f"{'-' * 10} {i} {'-' * 10}\n")
+            print(f"Turn {i}: ", end=' ')
 
             for drone in drones:
 
@@ -39,8 +39,6 @@ class Simulation:
                 drone.next_zone = Algo.djikstra_algo(
                     data, drone.curr_zone, data.end_zone)
 
-                Simulation.just_for_printinf(drone)
-
                 if drone.next_zone:
 
                     flag_rstd = False
@@ -52,6 +50,9 @@ class Simulation:
 
                     Simulation.reload_drone_data(drone, drone.next_zone,
                                                  flag_rstd)
+
+                    Simulation.just_for_printinf(drone)
+            print()
 
             yield drones
 
@@ -76,6 +77,21 @@ class Simulation:
             for cnx in zone.cnx:
                 if cnx not in rstd_cnx:
                     cnx.curr_cp = 0
+
+    @staticmethod
+    def reset_all_data(data: Data) -> None:
+
+        data.start_zone.meta.curr_drones = data.nb_drones
+
+        for zone in data.zones:
+
+            if zone.name != data.start_zone.name:
+                zone.meta.curr_drones = 0
+
+            zone.goal_cost = (float('inf'), None)
+
+            for cnx_obj in zone.cnx:
+                cnx_obj.curr_cp = 0
 
     @staticmethod
     def get_cnx_obj(curr_zone: ZoneData, next_zone: ZoneData
@@ -103,5 +119,6 @@ class Simulation:
     def move_rstd_dr(drone: Drones):
 
         drone.next_zone.meta.curr_drones += 1
+        print(f"{drone.id}-{drone.next_zone.name}.", end=' ')
         drone.curr_zone = drone.next_zone
         drone.in_cnx = False

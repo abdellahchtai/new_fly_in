@@ -12,6 +12,7 @@ class Visualization:
         w = info.current_w
         h = info.current_h
         font = pygame.font.Font(None, 20)
+        font2 = pygame.font.Font(None, 17)
 
         for zone in data.zones:
 
@@ -38,10 +39,14 @@ class Visualization:
                 color = pygame.Color('yellow')
 
             pygame.draw.circle(window, color, (x, y), 30)
-            window.blit(font.render(zone.name, True, 'black'),
+            pen = font
+            if len(zone.name) > 12:
+                pen = font2
+
+            window.blit(pen.render(zone.name, True, 'black'),
                         (x - 30, y - 60))
             window.blit(font.render(zone.meta.zone_type, True, 'black'),
-                        (x - 22, y + 32))
+                        (x - 30, y + 32))
             window.blit(
                 font.render(f"Max_dr: {zone.meta.max_drones}", True, 'black'),
                 (x - 30, y + 45))
@@ -56,6 +61,7 @@ class Visualization:
         w = info.current_w
         h = info.current_h
         font = pygame.font.Font(None, 100)
+        font2 = pygame.font.Font(None, 20)
 
         for drone in drones:
 
@@ -69,9 +75,19 @@ class Visualization:
             else:
                 x = drone.curr_zone.x * 100 + w // 2 + new_center[0]
                 y = drone.curr_zone.y * 140 + h // 2 + new_center[1]
+
+            window.blit(img_drn, (x - 30, y - 29))
             window.blit(font.render(f"Turn: {i}", True, 'black'),
                         (0, 0))
-            window.blit(img_drn, (x - 30, y - 29))
+            window.blit(font2.render(
+                f"{'-' * 15}Instruction: {'-' * 15}", True, 'black'),
+                        (10, 60))
+            window.blit(font2.render(
+                "Press 'm' to move drones.", True, 'black'),
+                        (15, 80))
+            window.blit(font2.render(
+                "Press 'r' to restart from beginning.", True, 'black'),
+                        (15, 100))
 
     @staticmethod
     def display(data: Data, drones: Drones, name_map: str) -> None:
@@ -109,15 +125,30 @@ class Visualization:
                     new_center[1] += new_y
 
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE:
+                    if event.key == pygame.K_m:
                         try:
+
                             drones = next(gen_drones)
+
                             if i == 0 and not drones[0].next_zone:
                                 ParseManager.error('No path is found to the '
                                                    'end zone.', 0)
                             i += 1
+
                         except StopIteration:
                             pass
+
+                    elif event.key == pygame.K_r:
+
+                        i = 0
+                        drones = [
+                            Drones(f"Dr_{j}", data.start_zone)
+                            for j in range(data.nb_drones)
+                            ]
+
+                        Simulation.reset_all_data(data)
+
+                        gen_drones = Simulation.find_pt_per_drone(data, drones)
 
             window.fill((128, 128, 128))
             Visualization.draw(data, window, new_center)
